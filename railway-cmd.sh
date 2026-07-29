@@ -49,8 +49,7 @@ if [ ! -d "$SITE_PATH" ]; then
             --admin-password '${RFP_SITE_ADMIN_PASSWORD}' \
             --no-mariadb-socket \
             --db-root-password '${RFP_DB_ROOT_PASSWORD}' \
-            --install-app erpnext \
-            --install-app hrms"
+            --install-app erpnext"
     su frappe -c "cd /home/frappe/bench && bench use '${RFP_DOMAIN_NAME}'"
     su frappe -c "cd /home/frappe/bench && bench --site '${RFP_DOMAIN_NAME}' enable-scheduler" || true
     echo "-> Site ${RFP_DOMAIN_NAME} created and scheduler enabled"
@@ -58,6 +57,22 @@ else
     echo "-> Site ${RFP_DOMAIN_NAME} already exists — skipping bootstrap"
     # Make sure default site is set on subsequent boots (volume may be fresh)
     su frappe -c "cd /home/frappe/bench && bench use '${RFP_DOMAIN_NAME}'" || true
+fi
+
+# --- Install HRMS separately (idempotent) -------------------------------------
+# Installing hrms in the same `new-site --install-app` chain as erpnext hits
+# frappe.exceptions.ValidationError ("user type doctype limit") because HRMS's
+# after_install hook runs before the site's config is fully warmed up.
+# Running it as its own step, with developer_mode on to bypass that limit
+# check, avoids it.
+if ! su frappe -c "cd /home/frappe/bench && bench --site '${RFP_DOMAIN_NAME}' list-apps" | grep -qx hrms; then
+    echo "-> Installing HRMS app on ${RFP_DOMAIN_NAME}"
+    su frappe -c "cd /home/frappe/bench && bench --site '${RFP_DOMAIN_NAME}' set-config -p developer_mode 1"
+    su frappe -c "cd /home/frappe/bench && bench --site '${RFP_DOMAIN_NAME}' install-app hrms"
+    su frappe -c "cd /home/frappe/bench && bench --site '${RFP_DOMAIN_NAME}' set-config -p developer_mode 0"
+    echo "-> HRMS installed"
+else
+    echo "-> HRMS already installed — skipping"
 fi
 
 # --- Clear cache (best-effort) -----------------------------------------------
