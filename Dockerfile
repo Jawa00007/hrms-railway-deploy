@@ -44,6 +44,8 @@ RUN echo "-> Install nginx, supervisor, mariadb-client, gettext-base, netcat" \
     && rm -rf /var/lib/apt/lists/* \
     && echo "-> Remove nginx default site" \
     && rm /etc/nginx/sites-enabled/default \
+    && echo "-> Get HRMS app (from jawadfarooq-a11y/hrms, version-15 branch)" \
+    && su $systemUser -c "bench get-app hrms https://github.com/jawadfarooq-a11y/hrms --branch version-15" \
     && echo "-> Rebuild bench (compile assets)" \
     && su $systemUser -c "bench build" \
     && echo "-> Snapshot built sites for first-boot assets/apps links" \

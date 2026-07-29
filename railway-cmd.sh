@@ -49,7 +49,8 @@ if [ ! -d "$SITE_PATH" ]; then
             --admin-password '${RFP_SITE_ADMIN_PASSWORD}' \
             --no-mariadb-socket \
             --db-root-password '${RFP_DB_ROOT_PASSWORD}' \
-            --install-app erpnext"
+            --install-app erpnext \
+            --install-app hrms"
     su frappe -c "cd /home/frappe/bench && bench use '${RFP_DOMAIN_NAME}'"
     su frappe -c "cd /home/frappe/bench && bench --site '${RFP_DOMAIN_NAME}' enable-scheduler" || true
     echo "-> Site ${RFP_DOMAIN_NAME} created and scheduler enabled"
